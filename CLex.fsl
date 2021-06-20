@@ -8,12 +8,8 @@
 open FSharp.Text.Lexing
 open CPar  // Token 的定义位于语法分析模块中
 
-// 抽象出来的正则表达式
-let digit = ['0'-'9']
-
 // 辅助函数，从lexbuf 得到当前的 词元字符串，lexeme 
-let lexemeAsString lexbuf = 
-    LexBuffer<char>.LexemeString lexbuf
+let lexemeAsString lexbuf = LexBuffer<char>.LexemeString lexbuf
 
 (* Scan keywords as identifiers and use this function to distinguish them. *)
 (* If the set of keywords is large, use a hashtable instead.               *)
@@ -22,7 +18,7 @@ let keyword s =
     match s with
     | "char"    -> CHAR    // 返回对应的Token ,Token 定义于 CPar.fsl 文件中
     | "int"     -> INT
-    // | "float"   -> FLOAT
+    | "float"   -> FLOAT
     | "else"    -> ELSE
     | "false"   -> CSTBOOL 0
     | "if"      -> IF
@@ -49,6 +45,10 @@ let cEscape s =
     | "\\r"  -> '\r'
     | _      -> failwith "Lexer error: impossible C escape"
 }
+
+// 抽象出来的正则表达式
+let digit = ['0'-'9']
+let name = ['a'-'z' 'A'-'Z' '0'-'9' '.' '_']
                         
 rule Token = parse          // 每个 规则rule 会生成为一个函数，函数名是规则名 Token
   | [' ' '\t' '\r'] { Token lexbuf } 
@@ -58,10 +58,11 @@ rule Token = parse          // 每个 规则rule 会生成为一个函数，函�
 
   | '\n'            { lexbuf.EndPos <- lexbuf.EndPos.NextLine; Token lexbuf } // 换行处理
                                                                              // EndPos 是内置类型 Position的实例，表示当前行的结束位置
-  | ['0'-'9']+      { CSTINT (System.Int32.Parse (lexemeAsString lexbuf)) }
+  | digit+      { CSTINT (System.Int32.Parse (lexemeAsString lexbuf)) }
                             //  System.Int32.Parse 将 字符串转换为 int 类型
                             // 在 CPar 中  词元CSTINT 的语义值的类型是int  %token <int> CSTINT
                             //  CSTINT 需要一个整数作为参数
+  | ['-']?digit+('.'digit+)?(['e''E']digit+)?	{ CSTFLOAT (System.Single.Parse(lexemeAsString lexbuf)) }
 
   | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']*
                     { keyword (lexemeAsString lexbuf) } //标识符处理
