@@ -20,7 +20,7 @@ class Machine {
     if (args.length == 0)
       System.out.println("Usage: java Machine <programfile> <arg1> ...\n");
     else
-      execute(args, true);
+      execute(args, false);
   }
 
   // These numeric instruction codes must agree with Machine.fs:

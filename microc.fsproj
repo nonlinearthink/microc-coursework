@@ -76,10 +76,10 @@
 echo -----------compile------------
 dotnet run -p ./microc.fsproj -g %(MyItem.RelativeDir)%(MyItem.FileName).c
 echo -------------run svm-----------
-machine %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)
+java Machine %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)
 echo %13
 echo -------------run svm trace-----
-java Machine -trace %(MyItem.RelativeDir)%(MyItem.FileName).out  %(MyItem.Args)"/>
+java Machinetrace %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)"/>
 
 </Target>
 
