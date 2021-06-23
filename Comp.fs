@@ -142,7 +142,7 @@ let x86patch code =
     if !isX86Instr then
         code @ [ CSTI -8; MUL ] // x86 偏移地址*8
     else
-        code 
+        code
 (* ------------------------------------------------------------------- *)
 
 (* Compiling micro-C statements:
@@ -213,6 +213,7 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         cAccess acc varEnv funEnv
         @ cExpr e varEnv funEnv @ [ STI ]
     | CstI i -> [ CSTI i ]
+    | CstF i -> [ CSTF(System.BitConverter.ToInt32(System.BitConverter.GetBytes(i), 0)) ]
     | Addr acc -> cAccess acc varEnv funEnv
     | Prim1 (ope, e1) ->
         cExpr e1 varEnv funEnv
@@ -318,7 +319,7 @@ let cProgram (Prog topdecs) : instr list =
         let (envf, fdepthf) = bindParams paras (globalVarEnv, 0)
         let code = cStmt body (envf, fdepthf) funEnv
 
-        [ FLabel (paraNums, labf) ]
+        [ FLabel(paraNums, labf) ]
         @ code @ [ RET(paraNums - 1) ]
 
     let functions =
@@ -354,7 +355,7 @@ let writeInstr fname instrs =
 
 let compileToFile program fname =
 
-    msg <|sprintf "program:\n %A" program
+    msg <| sprintf "program:\n %A" program
 
     let instrs = cProgram program
 
@@ -363,8 +364,10 @@ let compileToFile program fname =
     writeInstr (fname + ".ins") instrs
 
     let bytecode = code2ints instrs
-    msg <| sprintf "Stack VM numeric code:\n %A\n" bytecode
-    
+
+    msg
+    <| sprintf "Stack VM numeric code:\n %A\n" bytecode
+
     // 面向 x86 的虚拟机指令 略有差异，主要是地址偏移的计算方式不同
     // 单独生成 x86 的指令
     isX86Instr := true
@@ -372,6 +375,7 @@ let compileToFile program fname =
     writeInstr (fname + ".insx86") x86instrs
 
     let x86asmlist = List.map emitx86 x86instrs
+
     let x86asmbody =
         List.fold (fun asm ins -> asm + ins) "" x86asmlist
 

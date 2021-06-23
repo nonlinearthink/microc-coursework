@@ -58,3 +58,9 @@ microc/example/*.asm
 
 .vscode
 *.out.cps
+*.out
+*.asm
+*.ins
+*.insx86
+.DS_Store
+*.class
