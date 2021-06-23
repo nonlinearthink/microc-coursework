@@ -59,7 +59,7 @@
  <MyItem Include="example\array.c" Args ="8"/> 
  <MyItem Include="example\onearg.c" Args ="8"/> 
  <MyItem Include="example\assign.c" Args ="8"/>  -->
- <MyItem Include="example\if.c" Args ="8"/> 
+ <!-- <MyItem Include="example\if.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\while.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\pointer.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\expr.c" Args ="8"/>  -->
@@ -67,7 +67,7 @@
  <!-- <MyItem Include="example\return1.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function1.c" Args ="8"/>  -->
- <!-- <MyItem Include="example\test.c"/>  -->
+ <MyItem Include="example\test.c"/> 
 </ItemGroup>
 
 
