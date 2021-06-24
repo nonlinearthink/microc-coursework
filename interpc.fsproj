@@ -54,7 +54,8 @@
 <MyItem Include="ex23.c" />
 <MyItem Include="ex24.c" />
 <MyItem Include="ex25.c" /> -->
-<MyItem Include="test.c"/>
+  <MyItem Include="float.c"/>
+  <MyItem Include="char.c"/>
 </ItemGroup>
 
 
