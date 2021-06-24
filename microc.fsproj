@@ -67,7 +67,8 @@
  <!-- <MyItem Include="example\return1.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function1.c" Args ="8"/>  -->
- <MyItem Include="example\test.c"/> 
+  <MyItem Include="example\float.c"/> 
+  <MyItem Include="example\char.c"/> 
 </ItemGroup>
 
 

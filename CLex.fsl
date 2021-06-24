@@ -16,9 +16,9 @@ let lexemeAsString lexbuf = LexBuffer<char>.LexemeString lexbuf
 // keyword 处理关键字与标识符的辅助函数
 let keyword s =   
     match s with
-    | "char"    -> CHAR    // 返回对应的Token ,Token 定义于 CPar.fsl 文件中
-    | "int"     -> INT
+    | "int"     -> INT          // 返回对应的Token ,Token 定义于 CPar.fsl 文件中
     | "float"   -> FLOAT
+    | "char"    -> CHAR
     | "else"    -> ELSE
     | "false"   -> CSTBOOL 0
     | "if"      -> IF
@@ -98,6 +98,8 @@ rule Token = parse          // 每个 规则rule 会生成为一个函数，函�
                                                              //调用 Token 规则函数继续注释部分后面的处理
   | "/*"            { Comment lexbuf; Token lexbuf }   // 多行注释，调用 Comment规则
   | '"'             { CSTSTRING (String [] lexbuf) }   // 调用字符串处理规则
+  | ['\'']['a'-'z''A'-'Z''0'-'9']['\'']            
+                    { try let single = lexemeAsString lexbuf in CSTCHAR (System.Char.Parse(single.Substring(1, 1))) with ex -> failwith "Char literal error." }
   | eof             { EOF }
   | _               { failwith "Lexer error: illegal symbol" }
 

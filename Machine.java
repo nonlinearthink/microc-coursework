@@ -35,9 +35,9 @@ class Machine {
 
   // These numeric instruction codes must agree with Machine.fs:
 
-  final static int CSTI = 0, CSTF = 26, ADD = 1, SUB = 2, MUL = 3, DIV = 4, MOD = 5, EQ = 6, LT = 7, NOT = 8, DUP = 9,
-      SWAP = 10, LDI = 11, STI = 12, GETBP = 13, GETSP = 14, INCSP = 15, GOTO = 16, IFZERO = 17, IFNZRO = 18, CALL = 19,
-      TCALL = 20, RET = 21, PRINTI = 22, PRINTC = 23, LDARGS = 24, STOP = 25;
+  final static int CSTI = 0, CSTF = 26, CSTC = 27, ADD = 1, SUB = 2, MUL = 3, DIV = 4, MOD = 5, EQ = 6, LT = 7, NOT = 8,
+      DUP = 9, SWAP = 10, LDI = 11, STI = 12, GETBP = 13, GETSP = 14, INCSP = 15, GOTO = 16, IFZERO = 17, IFNZRO = 18,
+      CALL = 19, TCALL = 20, RET = 21, PRINTI = 22, PRINTC = 23, LDARGS = 24, STOP = 25;
 
   final static int STACKSIZE = 1000;
 
@@ -87,6 +87,10 @@ class Machine {
           break;
         case CSTF:
           s[sp + 1] = new FloatType(Float.intBitsToFloat(p[pc++]));
+          sp++;
+          break;
+        case CSTC:
+          s[sp + 1] = new CharType((char) (p[pc++]));
           sp++;
           break;
         case ADD:
@@ -366,6 +370,8 @@ class Machine {
         return "CSTI " + p[pc + 1];
       case CSTF:
         return "CSTF " + Float.intBitsToFloat(p[pc + 1]);
+      case CSTC:
+        return "CSTC " + (char) (p[pc + 1]);
       case ADD:
         return "ADD";
       case SUB:

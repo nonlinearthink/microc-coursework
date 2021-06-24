@@ -102,6 +102,9 @@ let rec emitx86 instr =
     | CSTF i ->
         $";CSTF {i}\n\t\
                     push {i}\n\t"
+    | CSTC i ->
+        $";CSTC {i}\n\t\
+                    push {i}\n\t"
     | GVAR i ->
         $";GVAR {i}\n\t\
                     mov rax ,qword [glovars]\n\t\
