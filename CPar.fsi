@@ -98,6 +98,7 @@ type nonTerminalId =
     | NONTERM_Topdecs
     | NONTERM_Topdec
     | NONTERM_Vardec
+    | NONTERM_VardecAndAssign
     | NONTERM_Vardesc
     | NONTERM_Fundec
     | NONTERM_Paramdecs

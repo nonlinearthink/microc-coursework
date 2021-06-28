@@ -112,28 +112,6 @@ let bindParam (env, newloc) (typ, x) : VarEnv =
 
 let bindParams paras ((env, newloc): VarEnv) : VarEnv = List.fold bindParam (env, newloc) paras
 
-(* ------------------------------------------------------------------- *)
-
-(* Build environments for global variables and functions *)
-
-let makeGlobalEnvs (topdecs: topdec list) : VarEnv * FunEnv * instr list =
-    let rec addv decs varEnv funEnv =
-
-        msg $"\nGlobal funEnv:\n{funEnv}\n"
-
-        match decs with
-        | [] -> (varEnv, funEnv, [])
-        | dec :: decr ->
-            match dec with
-            | Vardec (typ, var) ->
-                let (varEnv1, code1) = allocateWithMsg Glovar (typ, var) varEnv
-                let (varEnvr, funEnvr, coder) = addv decr varEnv1 funEnv
-                (varEnvr, funEnvr, code1 @ coder)
-            | Fundec (tyOpt, f, xs, body) -> addv decr varEnv ((f, ($"{newLabel ()}_{f}", tyOpt, xs)) :: funEnv)
-
-    addv topdecs ([], 0) []
-
-
 (*
     生成 x86 代码，局部地址偏移 *8 ，因为 x86栈上 8个字节表示一个 堆栈的 slot槽位
     栈式虚拟机 无须考虑，每个栈位保存一个变量
@@ -193,6 +171,13 @@ and cStmtOrDec stmtOrDec (varEnv: VarEnv) (funEnv: FunEnv) : VarEnv * instr list
     match stmtOrDec with
     | Stmt stmt -> (varEnv, cStmt stmt varEnv funEnv)
     | Dec (typ, x) -> allocateWithMsg Locvar (typ, x) varEnv
+    | DecAndAssign (typ, x, e) ->
+        let (varEnv1, code) = allocateWithMsg Locvar (typ, x) varEnv
+
+        (varEnv1,
+         code
+         @ (cAccess (AccVar(x)) varEnv1 [])
+           @ (cExpr e varEnv1 []) @ [ STI; INCSP -1 ])
 
 (* Compiling micro-C expressions:
 
@@ -214,7 +199,7 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         @ cExpr e varEnv funEnv @ [ STI ]
     | CstI i -> [ CSTI i ]
     | CstF i -> [ CSTF(System.BitConverter.ToInt32(System.BitConverter.GetBytes(i), 0)) ]
-    | CstC i -> [ CSTC ((int32)(System.BitConverter.ToInt16(System.BitConverter.GetBytes(char(i)), 0))) ]
+    | CstC i -> [ CSTC((int32) (System.BitConverter.ToInt16(System.BitConverter.GetBytes(char (i)), 0))) ]
     | Addr acc -> cAccess acc varEnv funEnv
     | Prim1 (ope, e1) ->
         cExpr e1 varEnv funEnv
@@ -276,7 +261,7 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
 
-and cAccess access varEnv funEnv : instr list =
+and cAccess access (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
     match access with
     | AccVar x ->
         match lookup (fst varEnv) x with
@@ -316,6 +301,51 @@ and callfun f es varEnv funEnv : instr list =
     else
         raise (Failure(f + ": parameter/argument mismatch"))
 
+(* Compile a complete micro-C and write the resulting instruction list
+   to file fname; also, return the program as a list of instructions.
+ *)
+
+let intsToFile (inss: int list) (fname: string) =
+    File.WriteAllText(fname, String.concat " " (List.map string inss))
+
+let writeInstr fname instrs =
+    let ins =
+        String.concat "\n" (List.map string instrs)
+
+    File.WriteAllText(fname, ins)
+    printfn $"VM instructions saved in file:\n\t{fname}"
+
+(* ------------------------------------------------------------------- *)
+
+
+(* Build environments for global variables and functions *)
+
+let makeGlobalEnvs (topdecs: topdec list) : VarEnv * FunEnv * instr list =
+    let rec addv decs varEnv funEnv =
+        msg $"\nGlobal funEnv:\n{funEnv}\n"
+
+        match decs with
+        | [] -> (varEnv, funEnv, [])
+        | dec :: decr ->
+            match dec with
+            | Vardec (typ, var) ->
+                let (varEnv1, code1) = allocateWithMsg Glovar (typ, var) varEnv
+                let (varEnvr, funEnvr, coder) = addv decr varEnv1 funEnv
+                (varEnvr, funEnvr, code1 @ coder)
+            | Fundec (tyOpt, f, xs, body) -> addv decr varEnv ((f, ($"{newLabel ()}_{f}", tyOpt, xs)) :: funEnv)
+            | VardecAndAssign (typ, var, e) ->
+                let (varEnv1, code1) = allocateWithMsg Glovar (typ, var) varEnv
+                let (varEnvr, funEnvr, coder) = addv decr varEnv1 funEnv
+
+                (varEnvr,
+                 funEnvr,
+                 code1
+                 @ coder
+                   @ (cAccess (AccVar(var)) varEnvr funEnvr)
+                     @ (cExpr e varEnv funEnv) @ [ STI; INCSP -1 ])
+
+    addv topdecs ([], 0) []
+
 
 (* Compile a complete micro-C program: globals, call to main, functions *)
 let argc = ref 0
@@ -337,7 +367,8 @@ let cProgram (Prog topdecs) : instr list =
         List.choose
             (function
             | Fundec (rTy, name, argTy, body) -> Some(compilefun (rTy, name, argTy, body))
-            | Vardec _ -> None)
+            | Vardec _ -> None
+            | VardecAndAssign _ -> None)
             topdecs
 
     let (mainlab, _, mainparams) = lookup funEnv "main"
@@ -348,20 +379,6 @@ let cProgram (Prog topdecs) : instr list =
         CALL(!argc, mainlab)
         STOP ]
       @ List.concat functions
-
-(* Compile a complete micro-C and write the resulting instruction list
-   to file fname; also, return the program as a list of instructions.
- *)
-
-let intsToFile (inss: int list) (fname: string) =
-    File.WriteAllText(fname, String.concat " " (List.map string inss))
-
-let writeInstr fname instrs =
-    let ins =
-        String.concat "\n" (List.map string instrs)
-
-    File.WriteAllText(fname, ins)
-    printfn $"VM instructions saved in file:\n\t{fname}"
 
 
 let compileToFile program fname =

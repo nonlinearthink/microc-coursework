@@ -12,6 +12,10 @@ open Absyn
 
 let compose1 f (g, s) = ((fun x -> g(f(x))), s)
 let nl = CstI 10 //  \n 的 ASCII 码
+
+let first  (a, _, _) = a
+let second (_, b, _) = b
+let third  (_, _, c) = c
 %}
 
 %token <int> CSTINT CSTBOOL  // <int> 是词元的语义值类型
@@ -55,6 +59,7 @@ Topdecs:
 
 Topdec: 
     Vardec SEMI                         { Vardec (fst $1, snd $1) }
+  | VardecAndAssign SEMI                { VardecAndAssign (first $1, second $1, third $1)}
   | Fundec                              { $1 }
 ;
 
@@ -74,6 +79,10 @@ int (*iap)[10];  // pointer to array of 10 int    (TypP (TypA (TypI, Some 10))
 
 Vardec:
     Type Vardesc                        { ((fst $2) $1, snd $2) }
+;
+
+VardecAndAssign:
+    Type Vardesc ASSIGN Expr    { ((fst $2) $1, snd $2 , $4) }
 ;
 
 /*
@@ -125,6 +134,7 @@ StmtOrDecSeq:
     /* empty */                         { [] }
   | Stmt StmtOrDecSeq                   { Stmt $1 :: $2 }
   | Vardec SEMI StmtOrDecSeq            { Dec (fst $1, snd $1) :: $3 }
+  | VardecAndAssign SEMI StmtOrDecSeq   { DecAndAssign ( first $1, second $1, third $1)::$3 }
 ;
 
 Stmt: 

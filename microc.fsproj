@@ -56,7 +56,6 @@
 <MyItem Include="example\ex25.c" /> -->
  <!-- <MyItem Include="example\emptymain.c" Args ="8"/> 
  <MyItem Include="example\global.c" Args ="8"/> 
- <MyItem Include="example\array.c" Args ="8"/> 
  <MyItem Include="example\onearg.c" Args ="8"/> 
  <MyItem Include="example\assign.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\if.c" Args ="8"/>  -->
@@ -71,6 +70,7 @@
   <MyItem Include="example\char.c"/> 
   <MyItem Include="example\array_float.c"/> 
   <MyItem Include="example\cond_expr.c"/> 
+  <MyItem Include="example\assign_dec.c"/> 
 </ItemGroup>
 
 
