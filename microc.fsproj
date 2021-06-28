@@ -69,6 +69,8 @@
  <!-- <MyItem Include="example\function1.c" Args ="8"/>  -->
   <MyItem Include="example\float.c"/> 
   <MyItem Include="example\char.c"/> 
+  <MyItem Include="example\array_float.c"/> 
+  <MyItem Include="example\cond_expr.c"/> 
 </ItemGroup>
 
 

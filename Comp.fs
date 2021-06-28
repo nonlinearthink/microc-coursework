@@ -239,6 +239,16 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
              | ">" -> [ SWAP; LT ]
              | "<=" -> [ SWAP; LT; NOT ]
              | _ -> raise (Failure "unknown primitive 2"))
+    | Prim3 (cond, e1, e2) ->
+        let labend = newLabel ()
+        let labelse = newLabel ()
+
+        cExpr cond varEnv funEnv
+        @ [ IFZERO labelse ]
+          @ cExpr e1 varEnv funEnv
+            @ [ GOTO labend ]
+              @ [ Label labelse ]
+                @ cExpr e2 varEnv funEnv @ [ Label labend ]
     | Andalso (e1, e2) ->
         let labend = newLabel ()
         let labfalse = newLabel ()
