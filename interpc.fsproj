@@ -56,6 +56,7 @@
 <MyItem Include="ex25.c" /> -->
   <MyItem Include="float.c"/>
   <MyItem Include="char.c"/>
+  <MyItem Include="cond_expr.c"/>
 </ItemGroup>
 
 
