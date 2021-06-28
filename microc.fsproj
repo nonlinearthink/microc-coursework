@@ -66,11 +66,13 @@
  <!-- <MyItem Include="example\return1.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function.c" Args ="8"/>  -->
  <!-- <MyItem Include="example\function1.c" Args ="8"/>  -->
-  <MyItem Include="example\float.c"/> 
-  <MyItem Include="example\char.c"/> 
-  <MyItem Include="example\array_float.c"/> 
-  <MyItem Include="example\cond_expr.c"/> 
-  <MyItem Include="example\assign_dec.c"/> 
+
+  <!-- <MyItem Include="example\float.c"/>  -->
+  <!-- <MyItem Include="example\char.c"/>  -->
+  <!-- <MyItem Include="example\array_float.c"/>  -->
+  <!-- <MyItem Include="example\cond_expr.c"/>  -->
+  <!-- <MyItem Include="example\assign_dec.c"/>  -->
+  <MyItem Include="example\self_op.c"/> 
 </ItemGroup>
 
 

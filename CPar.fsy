@@ -24,7 +24,7 @@ let third  (_, _, c) = c
 %token <char> CSTCHAR
 
 %token INT FLOAT CHAR ELSE IF NULL PRINT PRINTLN RETURN VOID WHILE
-%token PLUS MINUS TIMES DIV MOD
+%token PLUS MINUS TIMES DIV MOD SELFPLUS SELFMINUS
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
 %token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP COLON QUEST
@@ -39,7 +39,7 @@ let third  (_, _, c) = c
 %nonassoc GT LT GE LE
 %left PLUS MINUS
 %left TIMES DIV MOD 
-%nonassoc NOT AMP 
+%right NOT AMP SELFPLUS SELFMINUS
 %nonassoc LBRACK          /* highest precedence  */
 
 %start Main            // 语法开始符号
@@ -169,6 +169,10 @@ ExprNotAccess:
   | NOT Expr                            { Prim1("!", $2)      }
   | PRINT Expr                          { Prim1("printi", $2) }
   | PRINTLN                             { Prim1("printc", nl) }
+  | Expr SELFPLUS                       { Prim1("I++", $1)    }
+  | Expr SELFMINUS                      { Prim1("I--", $1)    }
+  | SELFPLUS Expr                       { Prim1("++I", $2)    }
+  | SELFMINUS Expr                      { Prim1("--I", $2)    }
   | Expr PLUS  Expr                     { Prim2("+",  $1, $3) }
   | Expr MINUS Expr                     { Prim2("-",  $1, $3) }
   | Expr TIMES Expr                     { Prim2("*",  $1, $3) }

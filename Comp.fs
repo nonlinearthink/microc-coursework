@@ -202,11 +202,38 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
     | CstC i -> [ CSTC((int32) (System.BitConverter.ToInt16(System.BitConverter.GetBytes(char (i)), 0))) ]
     | Addr acc -> cAccess acc varEnv funEnv
     | Prim1 (ope, e1) ->
+        let rec tmp stat =
+                match stat with
+                    | Access (c) -> c
+                    | _ -> raise (Failure "access fail")
+
         cExpr e1 varEnv funEnv
         @ (match ope with
            | "!" -> [ NOT ]
            | "printi" -> [ PRINTI ]
            | "printc" -> [ PRINTC ]
+           | "I++" ->
+               let ass =
+                   Assign(tmp e1, Prim2("+", Access(tmp e1), CstI 1))
+
+               cExpr ass varEnv funEnv @ [ INCSP -1 ]
+           | "I--" ->
+               let ass =
+                   Assign(tmp e1, Prim2("-", Access(tmp e1), CstI 1))
+
+               cExpr ass varEnv funEnv @ [ INCSP -1 ]
+           | "++I" ->
+               let ass =
+                   Assign(tmp e1, Prim2("+", Access(tmp e1), CstI 1))
+
+               CSTI 1 :: ADD :: [ INCSP -1 ]
+               @ cExpr ass varEnv funEnv
+           | "--I" ->
+               let ass =
+                   Assign(tmp e1, Prim2("-", Access(tmp e1), CstI 1))
+
+               CSTI 1 :: SUB :: [ INCSP -1 ]
+               @ cExpr ass varEnv funEnv
            | _ -> raise (Failure "unknown primitive 1"))
     | Prim2 (ope, e1, e2) ->
         cExpr e1 varEnv funEnv

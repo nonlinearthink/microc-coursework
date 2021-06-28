@@ -28,6 +28,8 @@ type token =
   | TIMES
   | DIV
   | MOD
+  | SELFPLUS
+  | SELFMINUS
   | INT
   | FLOAT
   | CHAR
@@ -73,6 +75,8 @@ type tokenId =
     | TOKEN_TIMES
     | TOKEN_DIV
     | TOKEN_MOD
+    | TOKEN_SELFPLUS
+    | TOKEN_SELFMINUS
     | TOKEN_INT
     | TOKEN_FLOAT
     | TOKEN_CHAR
