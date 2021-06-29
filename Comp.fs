@@ -149,6 +149,19 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         @ cStmt body varEnv funEnv
           @ [ Label labtest ]
             @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
+    | For (dec, e, opera, body) ->
+        let labend = newLabel ()
+        let labbegin = newLabel ()
+        let labope = newLabel ()
+
+        cExpr dec varEnv funEnv
+        @ [ INCSP -1; Label labbegin ]
+          @ cStmt body varEnv funEnv
+            @ [ Label labope ]
+              @ cExpr opera varEnv funEnv
+                @ [ INCSP -1 ]
+                  @ cExpr e varEnv funEnv
+                    @ [ IFNZRO labbegin ] @ [ Label labend ]
     | Expr e -> cExpr e varEnv funEnv @ [ INCSP -1 ]
     | Block stmts ->
 
@@ -203,9 +216,9 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
     | Addr acc -> cAccess acc varEnv funEnv
     | Prim1 (ope, e1) ->
         let rec tmp stat =
-                match stat with
-                    | Access (c) -> c
-                    | _ -> raise (Failure "access fail")
+            match stat with
+            | Access (c) -> c
+            | _ -> raise (Failure "access fail")
 
         cExpr e1 varEnv funEnv
         @ (match ope with

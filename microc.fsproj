@@ -71,8 +71,9 @@
   <!-- <MyItem Include="example\char.c"/>  -->
   <!-- <MyItem Include="example\array_float.c"/>  -->
   <!-- <MyItem Include="example\cond_expr.c"/>  -->
-  <!-- <MyItem Include="example\assign_dec.c"/>  -->
-  <MyItem Include="example\self_op.c"/> 
+  <MyItem Include="example\assign_dec.c"/> 
+  <!-- <MyItem Include="example\self_op.c"/>  -->
+  <MyItem Include="example\for.c"/>
 </ItemGroup>
 
 

@@ -23,7 +23,7 @@ let third  (_, _, c) = c
 %token <string> CSTSTRING NAME
 %token <char> CSTCHAR
 
-%token INT FLOAT CHAR ELSE IF NULL PRINT PRINTLN RETURN VOID WHILE
+%token INT FLOAT CHAR ELSE IF NULL PRINT PRINTLN RETURN VOID WHILE FOR
 %token PLUS MINUS TIMES DIV MOD SELFPLUS SELFMINUS
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
@@ -147,6 +147,7 @@ StmtM:  /* No unbalanced if-else */
   | RETURN SEMI                         { Return None          }
   | RETURN Expr SEMI                    { Return(Some($2))     }
   | Block                               { $1                   }
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM { For($3,$5,$7,$9) }
   | IF LPAR Expr RPAR StmtM ELSE StmtM  { If($3, $5, $7)       }
   | WHILE LPAR Expr RPAR StmtM          { While($3, $5)        }
 ;
