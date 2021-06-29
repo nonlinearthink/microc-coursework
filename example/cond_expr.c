@@ -1,8 +1,7 @@
 void main()
 {
-    int a;
+    int a = 4;
     int b;
-    a = 4;
-    b = a == 4 ? 0 : 1;
+    b = 4 ? 0 : 1;
     print b;
 }

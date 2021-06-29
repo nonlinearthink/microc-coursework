@@ -64,3 +64,5 @@ microc/example/*.asm
 *.insx86
 .DS_Store
 *.class
+
+result.txt
