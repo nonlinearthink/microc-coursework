@@ -149,6 +149,12 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         @ cStmt body varEnv funEnv
           @ [ Label labtest ]
             @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
+    | DoWhile (body, e) ->
+        let labbegin = newLabel ()
+
+        [ Label labbegin ]
+        @ cStmt body varEnv funEnv
+          @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
     | For (dec, e, opera, body) ->
         let labend = newLabel ()
         let labbegin = newLabel ()

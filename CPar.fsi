@@ -42,6 +42,7 @@ type token =
   | VOID
   | WHILE
   | FOR
+  | DO
   | CSTCHAR of (char)
   | CSTSTRING of (string)
   | NAME of (string)
@@ -90,6 +91,7 @@ type tokenId =
     | TOKEN_VOID
     | TOKEN_WHILE
     | TOKEN_FOR
+    | TOKEN_DO
     | TOKEN_CSTCHAR
     | TOKEN_CSTSTRING
     | TOKEN_NAME
