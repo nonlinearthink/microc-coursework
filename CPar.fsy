@@ -27,7 +27,7 @@ let third  (_, _, c) = c
 %token PLUS MINUS TIMES DIV MOD SELFPLUS SELFMINUS
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
-%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP COLON QUEST
+%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK SEMI COMMA ASSIGN AMP COLON QUEST BREAK
 %token EOF
 
 %right ASSIGN             /* lowest precedence */  // 最下面的优先级最高
@@ -145,6 +145,7 @@ Stmt:
 StmtM:  /* No unbalanced if-else */
     Expr SEMI                           { Expr($1)             }
   | RETURN SEMI                         { Return None          }
+  | BREAK SEMI                          { Break                }
   | RETURN Expr SEMI                    { Return(Some($2))     }
   | Block                               { $1                   }
   | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM { For($3,$5,$7,$9) }

@@ -66,6 +66,8 @@ type Paramdecs = (typ * string) list
 
 type FunEnv = (label * typ option * Paramdecs) Env
 
+type LabEnv = label list
+
 let isX86Instr = ref false
 
 (* Bind declared variable in env and generate code to allocate it: *)
@@ -128,54 +130,73 @@ let x86patch code =
    * varenv  is the local and global variable environment
    * funEnv  is the global function environment
 *)
+let rec breaklab labs =
+    match labs with
+    | lab :: tr -> lab
+    | [] -> failwith "no labs"
 
-let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
+let rec continuelab labs =
+    match labs with
+    | lab1 :: lab2 :: tr -> lab2
+    | [] -> failwith "no labs"
+    | [ _ ] ->
+        printf "\nlabs:\n%A\n" labs
+        failwith "no enough labs"
+
+let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr list =
     match stmt with
     | If (e, stmt1, stmt2) ->
         let labelse = newLabel ()
         let labend = newLabel ()
 
-        cExpr e varEnv funEnv
+        cExpr e varEnv funEnv lablist
         @ [ IFZERO labelse ]
-          @ cStmt stmt1 varEnv funEnv
+          @ cStmt stmt1 varEnv funEnv lablist
             @ [ GOTO labend ]
               @ [ Label labelse ]
-                @ cStmt stmt2 varEnv funEnv @ [ Label labend ]
+                @ cStmt stmt2 varEnv funEnv lablist
+                  @ [ Label labend ]
     | While (e, body) ->
         let labbegin = newLabel ()
         let labtest = newLabel ()
+        let labend = newLabel ()
+        let lablist = labend :: labtest :: labbegin :: lablist
 
         [ GOTO labtest; Label labbegin ]
-        @ cStmt body varEnv funEnv
+        @ cStmt body varEnv funEnv lablist
           @ [ Label labtest ]
-            @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
+            @ cExpr e varEnv funEnv lablist
+              @ [ IFNZRO labbegin; Label labend ]
     | DoWhile (body, e) ->
         let labbegin = newLabel ()
+        let labend = newLabel ()
+        let lablist = labend :: labbegin :: lablist
 
         [ Label labbegin ]
-        @ cStmt body varEnv funEnv
-          @ cExpr e varEnv funEnv @ [ IFNZRO labbegin ]
+        @ cStmt body varEnv funEnv lablist
+          @ cExpr e varEnv funEnv lablist
+            @ [ IFNZRO labbegin; Label labend ]
     | For (dec, e, opera, body) ->
         let labend = newLabel ()
         let labbegin = newLabel ()
         let labope = newLabel ()
+        let lablist = labend :: labope :: lablist
 
-        cExpr dec varEnv funEnv
+        cExpr dec varEnv funEnv lablist
         @ [ INCSP -1; Label labbegin ]
-          @ cStmt body varEnv funEnv
+          @ cStmt body varEnv funEnv lablist
             @ [ Label labope ]
-              @ cExpr opera varEnv funEnv
+              @ cExpr opera varEnv funEnv lablist
                 @ [ INCSP -1 ]
-                  @ cExpr e varEnv funEnv
+                  @ cExpr e varEnv funEnv lablist
                     @ [ IFNZRO labbegin ] @ [ Label labend ]
-    | Expr e -> cExpr e varEnv funEnv @ [ INCSP -1 ]
+    | Expr e -> cExpr e varEnv funEnv lablist @ [ INCSP -1 ]
     | Block stmts ->
-
         let rec loop stmts varEnv =
             match stmts with
             | [] -> (snd varEnv, [])
             | s1 :: sr ->
-                let (varEnv1, code1) = cStmtOrDec s1 varEnv funEnv
+                let (varEnv1, code1) = cStmtOrDec s1 varEnv funEnv lablist
                 let (fdepthr, coder) = loop sr varEnv1
                 (fdepthr, code1 @ coder)
 
@@ -184,19 +205,24 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         code @ [ INCSP(snd varEnv - fdepthend) ]
 
     | Return None -> [ RET(snd varEnv - 1) ]
-    | Return (Some e) -> cExpr e varEnv funEnv @ [ RET(snd varEnv) ]
+    | Return (Some e) ->
+        cExpr e varEnv funEnv lablist
+        @ [ RET(snd varEnv) ]
+    | Break ->
+        let labend = breaklab lablist
+        [ GOTO labend ]
 
-and cStmtOrDec stmtOrDec (varEnv: VarEnv) (funEnv: FunEnv) : VarEnv * instr list =
+and cStmtOrDec stmtOrDec (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : VarEnv * instr list =
     match stmtOrDec with
-    | Stmt stmt -> (varEnv, cStmt stmt varEnv funEnv)
+    | Stmt stmt -> (varEnv, cStmt stmt varEnv funEnv lablist)
     | Dec (typ, x) -> allocateWithMsg Locvar (typ, x) varEnv
     | DecAndAssign (typ, x, e) ->
         let (varEnv1, code) = allocateWithMsg Locvar (typ, x) varEnv
 
         (varEnv1,
          code
-         @ (cAccess (AccVar(x)) varEnv1 [])
-           @ (cExpr e varEnv1 []) @ [ STI; INCSP -1 ])
+         @ (cAccess (AccVar(x)) varEnv1 [] lablist)
+           @ (cExpr e varEnv1 [] lablist) @ [ STI; INCSP -1 ])
 
 (* Compiling micro-C expressions:
 
@@ -210,23 +236,23 @@ and cStmtOrDec stmtOrDec (varEnv: VarEnv) (funEnv: FunEnv) : VarEnv * instr list
    stack top (and thus extend the current stack frame with one element).
 *)
 
-and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
+and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr list =
     match e with
-    | Access acc -> cAccess acc varEnv funEnv @ [ LDI ]
+    | Access acc -> cAccess acc varEnv funEnv lablist @ [ LDI ]
     | Assign (acc, e) ->
-        cAccess acc varEnv funEnv
-        @ cExpr e varEnv funEnv @ [ STI ]
+        cAccess acc varEnv funEnv lablist
+        @ cExpr e varEnv funEnv lablist @ [ STI ]
     | CstI i -> [ CSTI i ]
-    | CstF i -> [ CSTF (System.BitConverter.ToInt32(System.BitConverter.GetBytes(i), 0)) ]
-    | CstC i -> [ CSTC ((int32) (System.BitConverter.ToInt16(System.BitConverter.GetBytes(char (i)), 0))) ]
-    | Addr acc -> cAccess acc varEnv funEnv
+    | CstF i -> [ CSTF(System.BitConverter.ToInt32(System.BitConverter.GetBytes(i), 0)) ]
+    | CstC i -> [ CSTC((int32) (System.BitConverter.ToInt16(System.BitConverter.GetBytes(char (i)), 0))) ]
+    | Addr acc -> cAccess acc varEnv funEnv lablist
     | Prim1 (ope, e1) ->
         let rec tmp stat =
             match stat with
             | Access (c) -> c
             | _ -> raise (Failure "access fail")
 
-        cExpr e1 varEnv funEnv
+        cExpr e1 varEnv funEnv lablist
         @ (match ope with
            | "!" -> [ NOT ]
            | "printi" -> [ PRINTI ]
@@ -235,28 +261,28 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
                let ass =
                    Assign(tmp e1, Prim2("+", Access(tmp e1), CstI 1))
 
-               cExpr ass varEnv funEnv @ [ INCSP -1 ]
+               cExpr ass varEnv funEnv lablist @ [ INCSP -1 ]
            | "I--" ->
                let ass =
                    Assign(tmp e1, Prim2("-", Access(tmp e1), CstI 1))
 
-               cExpr ass varEnv funEnv @ [ INCSP -1 ]
+               cExpr ass varEnv funEnv lablist @ [ INCSP -1 ]
            | "++I" ->
                let ass =
                    Assign(tmp e1, Prim2("+", Access(tmp e1), CstI 1))
 
                CSTI 1 :: ADD :: [ INCSP -1 ]
-               @ cExpr ass varEnv funEnv
+               @ cExpr ass varEnv funEnv lablist
            | "--I" ->
                let ass =
                    Assign(tmp e1, Prim2("-", Access(tmp e1), CstI 1))
 
                CSTI 1 :: SUB :: [ INCSP -1 ]
-               @ cExpr ass varEnv funEnv
+               @ cExpr ass varEnv funEnv lablist
            | _ -> raise (Failure "unknown primitive 1"))
     | Prim2 (ope, e1, e2) ->
-        cExpr e1 varEnv funEnv
-        @ cExpr e2 varEnv funEnv
+        cExpr e1 varEnv funEnv lablist
+        @ cExpr e2 varEnv funEnv lablist
           @ (match ope with
              | "*" -> [ MUL ]
              | "+" -> [ ADD ]
@@ -274,19 +300,19 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         let labend = newLabel ()
         let labelse = newLabel ()
 
-        cExpr cond varEnv funEnv
+        cExpr cond varEnv funEnv lablist
         @ [ IFZERO labelse ]
-          @ cExpr e1 varEnv funEnv
+          @ cExpr e1 varEnv funEnv lablist
             @ [ GOTO labend ]
               @ [ Label labelse ]
-                @ cExpr e2 varEnv funEnv @ [ Label labend ]
+                @ cExpr e2 varEnv funEnv lablist @ [ Label labend ]
     | Andalso (e1, e2) ->
         let labend = newLabel ()
         let labfalse = newLabel ()
 
-        cExpr e1 varEnv funEnv
+        cExpr e1 varEnv funEnv lablist
         @ [ IFZERO labfalse ]
-          @ cExpr e2 varEnv funEnv
+          @ cExpr e2 varEnv funEnv lablist
             @ [ GOTO labend
                 Label labfalse
                 CSTI 0
@@ -295,9 +321,9 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         let labend = newLabel ()
         let labtrue = newLabel ()
 
-        cExpr e1 varEnv funEnv
+        cExpr e1 varEnv funEnv lablist
         @ [ IFNZRO labtrue ]
-          @ cExpr e2 varEnv funEnv
+          @ cExpr e2 varEnv funEnv lablist
             @ [ GOTO labend
                 Label labtrue
                 CSTI 1
@@ -307,7 +333,7 @@ and cExpr (e: expr) (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
 
-and cAccess access (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
+and cAccess access (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr list =
     match access with
     | AccVar x ->
         match lookup (fst varEnv) x with
@@ -321,20 +347,21 @@ and cAccess access (varEnv: VarEnv) (funEnv: FunEnv) : instr list =
         | Locvar addr, _ -> [ GETBP; OFFSET addr; ADD ]
     | AccDeref e ->
         match e with
-        | Access _ -> (cExpr e varEnv funEnv)
-        | Addr _ -> (cExpr e varEnv funEnv)
+        | Access _ -> (cExpr e varEnv funEnv lablist)
+        | Addr _ -> (cExpr e varEnv funEnv lablist)
         | _ ->
             printfn "WARN: x86 pointer arithmetic not support!"
-            (cExpr e varEnv funEnv)
+            (cExpr e varEnv funEnv lablist)
     | AccIndex (acc, idx) ->
-        cAccess acc varEnv funEnv
+        cAccess acc varEnv funEnv lablist
         @ [ LDI ]
-          @ x86patch (cExpr idx varEnv funEnv) @ [ ADD ]
+          @ x86patch (cExpr idx varEnv funEnv lablist)
+            @ [ ADD ]
 
 (* Generate code to evaluate a list es of expressions: *)
 
 and cExprs es varEnv funEnv : instr list =
-    List.concat (List.map (fun e -> cExpr e varEnv funEnv) es)
+    List.concat (List.map (fun e -> cExpr e varEnv funEnv []) es)
 
 (* Generate code to evaluate arguments es and then call function f: *)
 
@@ -387,8 +414,8 @@ let makeGlobalEnvs (topdecs: topdec list) : VarEnv * FunEnv * instr list =
                  funEnvr,
                  code1
                  @ coder
-                   @ (cAccess (AccVar(var)) varEnvr funEnvr)
-                     @ (cExpr e varEnv funEnv) @ [ STI; INCSP -1 ])
+                   @ (cAccess (AccVar(var)) varEnvr funEnvr [])
+                     @ (cExpr e varEnv funEnv []) @ [ STI; INCSP -1 ])
 
     addv topdecs ([], 0) []
 
@@ -404,7 +431,7 @@ let cProgram (Prog topdecs) : instr list =
         let (labf, _, paras) = lookup funEnv f
         let paraNums = List.length paras
         let (envf, fdepthf) = bindParams paras (globalVarEnv, 0)
-        let code = cStmt body (envf, fdepthf) funEnv
+        let code = cStmt body (envf, fdepthf) funEnv []
 
         [ FLabel(paraNums, labf) ]
         @ code @ [ RET(paraNums - 1) ]
