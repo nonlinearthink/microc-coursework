@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" > 
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-  <FsLex Include="CLex.fsl">
-  <OtherFlags>--module CLex --unicode</OtherFlags>
-</FsLex>
-<FsYacc Include="CPar.fsy">
-    <OtherFlags>--module CPar</OtherFlags>
-</FsYacc>
+    <FsLex Include="CLex.fsl">
+      <OtherFlags>--module CLex --unicode</OtherFlags>
+    </FsLex>
+    <FsYacc Include="CPar.fsy">
+      <OtherFlags>--module CPar</OtherFlags>
+    </FsYacc>
+
     <Compile Include="Absyn.fs" />
     <Compile Include="Debug.fs" />
     <Compile Include="CPar.fs" />
@@ -21,59 +21,59 @@
     <Compile Include="Backend.fs" />
     <Compile Include="Comp.fs" />  
     <Compile Include="microc.fs" />
-
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FsLexYacc" Version="10.2.0" />
   </ItemGroup>
-<ItemGroup>
-  <MyItem Include="example\float.c"/> 
-  <MyItem Include="example\char.c"/> 
-  <MyItem Include="example\array_float.c"/> 
-  <MyItem Include="example\cond_expr.c"/> 
-  <MyItem Include="example\assign_dec.c"/> 
-  <MyItem Include="example\self_op.c"/> 
-  <MyItem Include="example\for.c"/>
-  <MyItem Include="example\do_while.c"/>
-</ItemGroup>
+
+  <ItemGroup>
+    <MyItem Include="example\float.c"/> 
+    <MyItem Include="example\char.c"/> 
+    <MyItem Include="example\array_float.c"/> 
+    <MyItem Include="example\cond_expr.c"/> 
+    <MyItem Include="example\assign_dec.c"/> 
+    <MyItem Include="example\self_op.c"/> 
+    <MyItem Include="example\for.c"/>
+    <MyItem Include="example\do_while.c"/>
+  </ItemGroup>
 
 
-<Target Name="ccrun">
-<Exec Command="
-echo -----------compile------------
-dotnet run -p ./microc.fsproj -g %(MyItem.RelativeDir)%(MyItem.FileName).c
-echo -------------run svm-----------
-java Machine %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)
-echo %13
-echo -------------run svm trace-----
-java Machinetrace %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)"/>
+  <Target Name="ccrun">
+    <Exec Command="
+      echo -----------compile------------
+      dotnet run -p ./microc.fsproj -g %(MyItem.RelativeDir)%(MyItem.FileName).c
+      echo -------------run svm-----------
+      java Machine %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)
+      echo %13
+      echo -------------run svm trace-----
+      java Machinetrace %(MyItem.RelativeDir)%(MyItem.FileName).out %(MyItem.Args)"
+    />
+  </Target>
 
-</Target>
+  <Target Name="ccrunx86">
+    <Exec Command="
+      echo -----------compile------------
+      dotnet run -p ./microc.fsproj  %(MyItem.RelativeDir)%(MyItem.FileName).c
+      echo -------assemble and link-------
+      nasm -f win64 -o %(MyItem.RelativeDir)%(MyItem.FileName).o %(MyItem.RelativeDir)%(MyItem.FileName).asm
+      echo nasm -f elf64 -o %(MyItem.RelativeDir)%(MyItem.FileName).o %(MyItem.RelativeDir)%(MyItem.FileName).asm
+      gcc -c driver.c
+      gcc -g -o %(MyItem.RelativeDir)%(MyItem.FileName).exe %(MyItem.RelativeDir)%(MyItem.FileName).o driver.o
 
-<Target Name="ccrunx86">
-<Exec Command="
-echo -----------compile------------
-dotnet run -p ./microc.fsproj  %(MyItem.RelativeDir)%(MyItem.FileName).c
-echo -------assemble and link-------
-nasm -f win64 -o %(MyItem.RelativeDir)%(MyItem.FileName).o %(MyItem.RelativeDir)%(MyItem.FileName).asm
-echo nasm -f elf64 -o %(MyItem.RelativeDir)%(MyItem.FileName).o %(MyItem.RelativeDir)%(MyItem.FileName).asm
-gcc -c driver.c
-gcc -g -o %(MyItem.RelativeDir)%(MyItem.FileName).exe %(MyItem.RelativeDir)%(MyItem.FileName).o driver.o
+      echo -------------run x86-----------
+      %(MyItem.RelativeDir)%(MyItem.FileName).exe  %(MyItem.Args) "
+    /> 
+  </Target>
+  
+  <ItemGroup>
+    <CleanDir Include="example\*.c"/>
+  </ItemGroup>
 
-echo -------------run x86-----------
-%(MyItem.RelativeDir)%(MyItem.FileName).exe  %(MyItem.Args) "/> 
-</Target>
-<ItemGroup>
-<CleanDir Include="example\*.c"/>
-</ItemGroup>
-
-<Target Name="cclean">
-<Exec Command="
-echo -----------clean------------
-
-rm %(CleanDir.RelativeDir)*.ins %(CleanDir.RelativeDir)*.insx86 %(CleanDir.RelativeDir)*.out %(CleanDir.RelativeDir)*.asm %(CleanDir.RelativeDir)*.o %(CleanDir.RelativeDir)*.obj %(CleanDir.RelativeDir)*.exe
-
-"/> 
-</Target>
+  <Target Name="cclean">
+    <Exec Command="
+      echo -----------clean------------
+      rm %(CleanDir.RelativeDir)*.ins %(CleanDir.RelativeDir)*.insx86 %(CleanDir.RelativeDir)*.out %(CleanDir.RelativeDir)*.asm %(CleanDir.RelativeDir)*.o %(CleanDir.RelativeDir)*.obj %(CleanDir.RelativeDir)*.exe"
+    /> 
+  </Target>
 </Project>
