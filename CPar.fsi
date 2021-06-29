@@ -15,6 +15,7 @@ type token =
   | COLON
   | QUEST
   | BREAK
+  | CONTINUE
   | NOT
   | SEQOR
   | SEQAND
@@ -65,6 +66,7 @@ type tokenId =
     | TOKEN_COLON
     | TOKEN_QUEST
     | TOKEN_BREAK
+    | TOKEN_CONTINUE
     | TOKEN_NOT
     | TOKEN_SEQOR
     | TOKEN_SEQAND

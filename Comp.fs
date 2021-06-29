@@ -137,7 +137,9 @@ let rec breaklab labs =
 
 let rec continuelab labs =
     match labs with
-    | lab1 :: lab2 :: tr -> lab2
+    | lab1 :: lab2 :: tr ->
+        printf "lab2:\n%A\n" lab2
+        lab2
     | [] -> failwith "no labs"
     | [ _ ] ->
         printf "\nlabs:\n%A\n" labs
@@ -160,7 +162,8 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr l
         let labbegin = newLabel ()
         let labtest = newLabel ()
         let labend = newLabel ()
-        let lablist = labend :: labtest :: labbegin :: lablist
+        let lablist = labend :: labtest :: lablist
+        printf "\nlabs:\n%A\n" lablist
 
         [ GOTO labtest; Label labbegin ]
         @ cStmt body varEnv funEnv lablist
@@ -169,24 +172,26 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr l
               @ [ IFNZRO labbegin; Label labend ]
     | DoWhile (body, e) ->
         let labbegin = newLabel ()
+        let labtest = newLabel ()
         let labend = newLabel ()
-        let lablist = labend :: labbegin :: lablist
+        let lablist = labend :: labtest :: lablist
 
         [ Label labbegin ]
         @ cStmt body varEnv funEnv lablist
-          @ cExpr e varEnv funEnv lablist
-            @ [ IFNZRO labbegin; Label labend ]
-    | For (dec, e, opera, body) ->
+          @ [ Label labtest ]
+            @ cExpr e varEnv funEnv lablist
+              @ [ IFNZRO labbegin; Label labend ]
+    | For (dec, e, op, body) ->
         let labend = newLabel ()
         let labbegin = newLabel ()
-        let labope = newLabel ()
-        let lablist = labend :: labope :: lablist
+        let labtest = newLabel ()
+        let lablist = labend :: labtest :: lablist
 
         cExpr dec varEnv funEnv lablist
         @ [ INCSP -1; Label labbegin ]
           @ cStmt body varEnv funEnv lablist
-            @ [ Label labope ]
-              @ cExpr opera varEnv funEnv lablist
+            @ [ Label labtest ]
+              @ cExpr op varEnv funEnv lablist
                 @ [ INCSP -1 ]
                   @ cExpr e varEnv funEnv lablist
                     @ [ IFNZRO labbegin ] @ [ Label labend ]
@@ -209,8 +214,11 @@ let rec cStmt stmt (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : instr l
         cExpr e varEnv funEnv lablist
         @ [ RET(snd varEnv) ]
     | Break ->
-        let labend = breaklab lablist
-        [ GOTO labend ]
+        let labbreak = breaklab lablist
+        [ GOTO labbreak ]
+    | Continue ->
+        let labcontinue = continuelab lablist
+        [ GOTO labcontinue ]
 
 and cStmtOrDec stmtOrDec (varEnv: VarEnv) (funEnv: FunEnv) (lablist: LabEnv) : VarEnv * instr list =
     match stmtOrDec with
