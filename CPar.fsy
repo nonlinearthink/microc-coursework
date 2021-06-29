@@ -23,7 +23,7 @@ let third  (_, _, c) = c
 %token <string> CSTSTRING NAME
 %token <char> CSTCHAR
 
-%token INT FLOAT CHAR ELSE IF NULL PRINT PRINTLN RETURN VOID WHILE FOR DO
+%token INT FLOAT CHAR ELSE IF NULL PRINT PRINTLN RETURN VOID WHILE FOR DO SWITCH CASE
 %token PLUS MINUS TIMES DIV MOD SELFPLUS SELFMINUS
 %token EQ NE GT LT GE LE
 %token NOT SEQOR SEQAND
@@ -153,6 +153,12 @@ StmtM:  /* No unbalanced if-else */
   | IF LPAR Expr RPAR StmtM ELSE StmtM  { If($3, $5, $7)       }
   | WHILE LPAR Expr RPAR StmtM          { While($3, $5)        }
   | DO StmtM WHILE LPAR Expr RPAR SEMI  { DoWhile($2, $5)      }
+  | SWITCH LPAR Expr RPAR LBRACE StmtCase RBRACE { Switch($3,$6)  }
+;
+
+StmtCase:
+    CASE AtExprNotAccess COLON StmtM               { [Case($2,$4)]    }  
+  | CASE AtExprNotAccess COLON StmtM StmtCase      { Case($2,$4)::$5  }
 ;
 
 StmtU:

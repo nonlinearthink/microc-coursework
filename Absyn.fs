@@ -46,6 +46,8 @@ and stmt =
   | Block of stmtordec list          (* Block: grouping and scope   *)
   | Break
   | Continue
+  | Switch of expr * stmt list
+  | Case of expr * stmt
   // 语句块内部，可以是变量声明 或语句的列表                                                              
 
 and stmtordec =                                                    

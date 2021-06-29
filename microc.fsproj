@@ -28,16 +28,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <MyItem Include="example\float.c"/>
-    <MyItem Include="example\char.c"/>
-    <MyItem Include="example\array_float.c"/>
-    <MyItem Include="example\cond_expr.c"/>
-    <MyItem Include="example\assign_dec.c"/>
-    <MyItem Include="example\self_op.c"/>
-    <MyItem Include="example\for.c"/>
-    <MyItem Include="example\do_while.c"/> -->
+    <!-- <MyItem Include="example\float.c"/> -->
+    <!-- <MyItem Include="example\char.c"/> -->
+    <!-- <MyItem Include="example\array_float.c"/> -->
+    <!-- <MyItem Include="example\cond_expr.c"/> -->
+    <!-- <MyItem Include="example\assign_dec.c"/> -->
+    <!-- <MyItem Include="example\self_op.c"/> -->
+    <!-- <MyItem Include="example\for.c"/> -->
+    <!-- <MyItem Include="example\do_while.c"/> -->
     <!-- <MyItem Include="example\break.c"/> -->
-    <MyItem Include="example\continue.c"/>
+    <!-- <MyItem Include="example\continue.c"/> -->
+    <MyItem Include="example\switch.c"/>
   </ItemGroup>
 
 
